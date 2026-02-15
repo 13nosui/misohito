@@ -79,11 +79,13 @@ __turbopack_context__.s([
     ()=>PostAnimation
 ]);
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/server/route-modules/app-page/vendored/ssr/react-jsx-dev-runtime.js [app-ssr] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/server/route-modules/app-page/vendored/ssr/react.js [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$render$2f$components$2f$motion$2f$proxy$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/framer-motion/dist/es/render/components/motion/proxy.mjs [app-ssr] (ecmascript)");
 'use client';
 ;
 ;
-const PostAnimation = ({ sections })=>{
+;
+const PostAnimation = ({ sections, onComplete })=>{
     const sectionKeys = [
         'kami1',
         'kami2',
@@ -91,67 +93,74 @@ const PostAnimation = ({ sections })=>{
         'shimo1',
         'shimo2'
     ];
-    // 文字ごとのディレイを蓄積して計算するための変数
     let globalCharIndex = 0;
+    // アニメーション総時間の計算
+    // (31文字 * 0.05) + (5節 * 0.2) + 余裕を持たせて2秒後くらいに切り替え
+    (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
+        if (onComplete) {
+            const totalDuration = 31 * 50 + 5 * 200 + 2000;
+            const timer = setTimeout(()=>{
+                onComplete();
+            }, totalDuration);
+            return ()=>clearTimeout(timer);
+        }
+    }, [
+        onComplete
+    ]);
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-        className: "flex flex-col items-center justify-center min-h-[50vh]",
+        className: "flex flex-col items-center justify-center min-h-[60vh]",
         children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
             className: "flex flex-wrap items-center justify-center max-w-2xl gap-y-6",
             children: sectionKeys.map((key, sIndex)=>{
                 const chars = sections[key].split('');
                 return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                     className: "flex mr-[1.5em] last:mr-0",
-                    children: [
-                        " ",
-                        chars.map((char, cIndex)=>{
-                            // 中村勇吾風リズムの計算
-                            // 文字間は0.05秒と高速、節の間で0.2秒のタメを作る
-                            const delay = globalCharIndex * 0.05 + sIndex * 0.2;
-                            globalCharIndex++;
-                            return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$render$2f$components$2f$motion$2f$proxy$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["motion"].span, {
-                                className: "text-3xl md:text-4xl font-medium tracking-tight text-slate-900",
-                                initial: {
-                                    opacity: 0,
-                                    x: -20,
-                                    filter: 'blur(10px)'
-                                },
-                                animate: {
-                                    opacity: 1,
-                                    x: 0,
-                                    filter: 'blur(0px)'
-                                },
-                                transition: {
-                                    duration: 0.4,
-                                    delay: delay,
-                                    ease: [
-                                        0.16,
-                                        1,
-                                        0.3,
-                                        1
-                                    ]
-                                },
-                                children: char
-                            }, `${key}-${cIndex}`, false, {
-                                fileName: "[project]/src/components/post/PostAnimation.tsx",
-                                lineNumber: 35,
-                                columnNumber: 37
-                            }, ("TURBOPACK compile-time value", void 0));
-                        })
-                    ]
-                }, key, true, {
+                    children: chars.map((char, cIndex)=>{
+                        const delay = globalCharIndex * 0.05 + sIndex * 0.2;
+                        globalCharIndex++;
+                        return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$render$2f$components$2f$motion$2f$proxy$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["motion"].span, {
+                            className: "text-3xl md:text-4xl font-medium tracking-tight text-slate-900",
+                            initial: {
+                                opacity: 0,
+                                x: -20,
+                                filter: 'blur(10px)'
+                            },
+                            animate: {
+                                opacity: 1,
+                                x: 0,
+                                filter: 'blur(0px)'
+                            },
+                            transition: {
+                                duration: 0.4,
+                                delay: delay,
+                                ease: [
+                                    0.16,
+                                    1,
+                                    0.3,
+                                    1
+                                ]
+                            },
+                            children: char
+                        }, `${key}-${cIndex}`, false, {
+                            fileName: "[project]/src/components/post/PostAnimation.tsx",
+                            lineNumber: 41,
+                            columnNumber: 37
+                        }, ("TURBOPACK compile-time value", void 0));
+                    })
+                }, key, false, {
                     fileName: "[project]/src/components/post/PostAnimation.tsx",
-                    lineNumber: 27,
+                    lineNumber: 35,
                     columnNumber: 25
                 }, ("TURBOPACK compile-time value", void 0));
             })
         }, void 0, false, {
             fileName: "[project]/src/components/post/PostAnimation.tsx",
-            lineNumber: 22,
+            lineNumber: 30,
             columnNumber: 13
         }, ("TURBOPACK compile-time value", void 0))
     }, void 0, false, {
         fileName: "[project]/src/components/post/PostAnimation.tsx",
-        lineNumber: 18,
+        lineNumber: 29,
         columnNumber: 9
     }, ("TURBOPACK compile-time value", void 0));
 };

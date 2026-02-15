@@ -1,33 +1,39 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { TankaSections } from '@/types/post';
 
 interface PostAnimationProps {
     sections: TankaSections;
+    onComplete?: () => void; // 追加：完了時のコールバック
 }
 
-export const PostAnimation = ({ sections }: PostAnimationProps) => {
+export const PostAnimation = ({ sections, onComplete }: PostAnimationProps) => {
     const sectionKeys: (keyof TankaSections)[] = ['kami1', 'kami2', 'kami3', 'shimo1', 'shimo2'];
-
-    // 文字ごとのディレイを蓄積して計算するための変数
     let globalCharIndex = 0;
 
+    // アニメーション総時間の計算
+    // (31文字 * 0.05) + (5節 * 0.2) + 余裕を持たせて2秒後くらいに切り替え
+    useEffect(() => {
+        if (onComplete) {
+            const totalDuration = (31 * 50) + (5 * 200) + 2000;
+            const timer = setTimeout(() => {
+                onComplete();
+            }, totalDuration);
+            return () => clearTimeout(timer);
+        }
+    }, [onComplete]);
+
     return (
-        <div className="flex flex-col items-center justify-center min-h-[50vh]">
-            {/* ここに将来的に「ロゴ」や「物理的な枠」が入るかもしれません。
-        現在はシンプルに文字だけを表示します。
-      */}
+        <div className="flex flex-col items-center justify-center min-h-[60vh]">
             <div className="flex flex-wrap items-center justify-center max-w-2xl gap-y-6">
                 {sectionKeys.map((key, sIndex) => {
                     const chars = sections[key].split('');
 
                     return (
-                        <div key={key} className="flex mr-[1.5em] last:mr-0"> {/* 節ごとの間隔 */}
+                        <div key={key} className="flex mr-[1.5em] last:mr-0">
                             {chars.map((char, cIndex) => {
-                                // 中村勇吾風リズムの計算
-                                // 文字間は0.05秒と高速、節の間で0.2秒のタメを作る
                                 const delay = globalCharIndex * 0.05 + sIndex * 0.2;
                                 globalCharIndex++;
 
@@ -40,7 +46,7 @@ export const PostAnimation = ({ sections }: PostAnimationProps) => {
                                         transition={{
                                             duration: 0.4,
                                             delay: delay,
-                                            ease: [0.16, 1, 0.3, 1], // 切れ味鋭いイージング
+                                            ease: [0.16, 1, 0.3, 1],
                                         }}
                                     >
                                         {char}
