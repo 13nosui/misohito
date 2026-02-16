@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useMemo } from 'react'; // useMemoを追加
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { TankaSections } from '@/types/post';
 
@@ -10,9 +10,13 @@ interface PostAnimationProps {
 }
 
 export const PostAnimation = ({ sections, onComplete }: PostAnimationProps) => {
-    // ★修正: useMemoを使ってsectionKeysをメモ化
-    // これにより、setCardSizeによる再レンダリング時に新しい配列が生成されるのを防ぎ、
-    // useEffectの無限ループを回避します。
+    // ★修正: 最新のonComplete関数をrefに保持する
+    // これにより、useEffectの依存配列からonCompleteを外しても、常に最新の関数を呼べる
+    const onCompleteRef = useRef(onComplete);
+    useEffect(() => {
+        onCompleteRef.current = onComplete;
+    }, [onComplete]);
+
     const sectionKeys = useMemo(() => {
         const allKeys: (keyof TankaSections)[] = ['kami1', 'kami2', 'kami3', 'shimo1', 'shimo2'];
         return allKeys.filter(key => sections[key] && sections[key]?.trim() !== '');
@@ -33,20 +37,22 @@ export const PostAnimation = ({ sections, onComplete }: PostAnimationProps) => {
         window.addEventListener('resize', updateSize);
 
         // 文字数ベースで完了時間を計算
-        // sectionKeysはメモ化されているため、依存配列に入れても無限ループしません
         const validText = sectionKeys.map(k => sections[k]).join('');
         const totalChars = validText.length;
         const totalDuration = (totalChars * 50) + (sectionKeys.length * 200) + 2000;
 
         const timer = setTimeout(() => {
-            onComplete();
+            // ★修正: ref経由で呼び出す
+            if (onCompleteRef.current) {
+                onCompleteRef.current();
+            }
         }, totalDuration);
 
         return () => {
             window.removeEventListener('resize', updateSize);
             clearTimeout(timer);
         };
-    }, [onComplete, sections, sectionKeys]);
+    }, [sections, sectionKeys]); // ★onCompleteを依存配列から削除
 
     return (
         <motion.div

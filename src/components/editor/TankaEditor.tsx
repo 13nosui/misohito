@@ -2,45 +2,32 @@
 
 import React, { useState } from 'react';
 import { useTankaEditor } from '@/hooks/useTankaEditor';
-import { PostAnimation } from '@/components/post/PostAnimation';
-import { DraggablePost } from '@/components/post/DraggablePost';
+// PostAnimation, DraggablePost のインポートは削除（page.tsxで管理するため）
 
-type EditorStatus = 'editing' | 'animating' | 'viewing';
+// ★追加: propsを受け取るように変更
+interface TankaEditorProps {
+    onComplete?: (sections: any) => void;
+}
 
-export const TankaEditor = () => {
+// ★修正: propsを受け取る
+export const TankaEditor = ({ onComplete }: TankaEditorProps) => {
     const { sections, inputRefs, handleChange, LIMITS, mode, setMode, activeKeys } = useTankaEditor();
-    const [status, setStatus] = useState<EditorStatus>('editing');
 
-    // ★修正: 値が undefined の場合は空文字として扱い、ビルドエラーを防ぐ
+    // ★修正: 内部的なstatus管理（animating, viewing）は削除し、単なる入力フォームに徹する
+
     const isComplete = activeKeys.every(
         (key) => (sections[key] ?? '').length === LIMITS[key]
     );
 
     const handlePost = () => {
-        if (isComplete) {
-            setStatus('animating');
+        if (isComplete && onComplete) {
+            onComplete(sections); // 親コンポーネントへデータを渡す
         }
     };
 
-    const handleAnimationComplete = () => {
-        setStatus('viewing');
-    };
-
-    const handleDiscard = () => {
-        setStatus('editing');
-    };
-
-    if (status === 'animating') {
-        return <PostAnimation sections={sections} onComplete={handleAnimationComplete} />;
-    }
-
-    if (status === 'viewing') {
-        return <DraggablePost sections={sections} onDelete={handleDiscard} />;
-    }
-
     return (
         <div className="w-full max-w-2xl mx-auto p-8 relative min-h-[60vh] flex flex-col justify-center">
-
+            {/* ... 中身のUIコードは変更なし ... */}
             <div className="absolute top-0 right-0 p-4 flex gap-4 text-xs font-medium tracking-widest text-slate-400">
                 <button
                     onClick={() => setMode('tanka')}
@@ -65,7 +52,6 @@ export const TankaEditor = () => {
                         <input
                             ref={inputRefs[key]}
                             type="text"
-                            // ★修正: undefined対策 (ここも念のため)
                             value={sections[key] ?? ''}
                             onChange={(e) => handleChange(e, key)}
                             className={`
@@ -84,7 +70,6 @@ export const TankaEditor = () => {
                 <div className="text-center">
                     <p className="text-xs text-slate-400 mb-4 font-light tracking-widest">PREVIEW</p>
                     <p className="text-lg tracking-wider text-slate-600 font-serif">
-                        {/* ★修正: undefined対策 */}
                         {activeKeys.map(key => sections[key] ?? '').filter(Boolean).join('　')}
                     </p>
                 </div>

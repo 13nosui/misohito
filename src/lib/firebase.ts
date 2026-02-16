@@ -1,8 +1,7 @@
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
+import { getFirestore } from 'firebase/firestore'; // ★追加
 
-// Firebaseコンソールから取得した設定値を入れてください
-// 本番環境では環境変数（.env.local）を使用することを強く推奨します
 const firebaseConfig = {
     apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
     authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -12,9 +11,9 @@ const firebaseConfig = {
     appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// 二重初期化を防ぐ
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
 const auth = getAuth(app);
+const db = getFirestore(app); // ★追加
 const googleProvider = new GoogleAuthProvider();
 
-export { auth, googleProvider };
+export { auth, db, googleProvider }; // ★dbをエクスポートに追加
