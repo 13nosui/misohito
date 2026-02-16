@@ -34,3 +34,17 @@ export type MisohitoPost = {
     // 引用（連鎖）のコンテキスト
     parentPostId?: string;   // 引用元の投稿ID（連作・大喜利用）
 };
+
+export type Author = {
+    id: string;
+    name: string;
+    photoURL?: string;
+};
+
+export type Post = {
+    id: string;
+    author: Author;
+    sections: TankaSections;
+    createdAt: Date;
+    likes: number; // スタンプ/いいね用
+};
