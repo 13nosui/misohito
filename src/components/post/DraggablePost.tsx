@@ -34,25 +34,24 @@ export const DraggablePost = ({ sections, onDelete }: DraggablePostProps) => {
         engine.gravity.y = 0;
         engine.gravity.x = 0;
 
-        // ★重要: 計算精度を極限まで上げる（これでズレ・伸びを物理的に排除する）
-        // 通常は6程度ですが、20まで上げることで「完全剛体」に近い結合を実現します
-        engine.positionIterations = 10;
-        engine.velocityIterations = 10;
-        engine.constraintIterations = 20;
+        // 計算精度設定（標準より少し高めで安定させる）
+        engine.positionIterations = 8;
+        engine.velocityIterations = 8;
+        engine.constraintIterations = 8;
 
         engineRef.current = engine;
 
         // 2. Create Card Body
         const cardBody = Matter.Bodies.rectangle(cw / 2, ch / 2, CARD_WIDTH, CARD_HEIGHT, {
-            frictionAir: 0.05, // 空気抵抗：高めに設定して「ネットリした重さ」を出す
-            restitution: 0.4,  // 反発係数
-            density: 0.01,     // 密度：重くする（0.001 -> 0.01）
+            // ★修正: 密度を極端に軽くせず、ある程度の質量を持たせて挙動を安定させる
+            density: 0.005,
+            frictionAir: 0.06, // 通常時は高めの空気抵抗で「重み」と「静止性」を出す
+            restitution: 0.4,
         });
         cardBodyRef.current = cardBody;
 
-        // 慣性モーメント（回転しにくさ）の調整
-        // 密度を上げた分、回転しにくくなりすぎるのを防ぐため、少しだけ数値を下げる
-        // これにより「重いけど、端を持つと回る」挙動になる
+        // 慣性モーメント（回転のしにくさ）の微調整
+        // デフォルトのままでも良いが、少しだけ振り回しやすくする
         Matter.Body.setInertia(cardBody, cardBody.inertia * 0.8);
 
         Matter.World.add(engine.world, cardBody);
@@ -61,18 +60,20 @@ export const DraggablePost = ({ sections, onDelete }: DraggablePostProps) => {
         let animationFrameId: number;
 
         const update = () => {
-            // 物理時間を進める
             Matter.Engine.update(engine, 1000 / 60);
 
             if (cardBody) {
                 const isDragging = dragConstraintRef.current !== null;
 
-                // ■ 回転・移動の減衰コントロール
-                // 掴んでいる時 (0.8): 暴れすぎないように少し抑えるが、手の動き（トルク）はしっかり伝える
-                // 離している時 (0.999): 慣性で滑らせる
-                const angularDamping = isDragging ? 0.8 : 0.999;
+                // ★【最重要トリック】
+                // ドラッグ中は空気抵抗を極限まで下げる（0.001）。
+                // これにより、バネ(Constraint)が弱くても、抵抗がないため遅れずにピタッと追従する。
+                // 手を離すと元の抵抗(0.06)に戻り、重みのある滑り方をして止まる。
+                cardBody.frictionAir = isDragging ? 0.001 : 0.06;
 
-                // Matter.jsの計算値に対して手動ブレーキを適用
+                // 回転ブレーキの制御
+                // ドラッグ中もある程度の慣性を残す（0.9）ことで、マウスのターンに反応させる
+                const angularDamping = isDragging ? 0.9 : 0.999;
                 Matter.Body.setAngularVelocity(cardBody, cardBody.angularVelocity * angularDamping);
 
                 // DOM反映
@@ -128,7 +129,7 @@ export const DraggablePost = ({ sections, onDelete }: DraggablePostProps) => {
         const clientY = e.clientY;
         const body = cardBodyRef.current;
 
-        // 掴んだ瞬間に物理速度を完全停止（キャッチの安定化）
+        // 掴んだ瞬間の物理速度をリセット（キャッチの安定化）
         Matter.Body.setVelocity(body, { x: 0, y: 0 });
         Matter.Body.setAngularVelocity(body, 0);
 
@@ -145,10 +146,12 @@ export const DraggablePost = ({ sections, onDelete }: DraggablePostProps) => {
             pointA: { x: clientX, y: clientY },
             bodyB: body,
             pointB: localPoint,
-            // ★ここが「ズレない」ための核心設定
-            stiffness: 1,   // 最大硬度。バネではなく「棒」にする。
-            damping: 0.05,  // 振動を抑えるための最小限の減衰。これ以上増やすと遅延（ズレ）の原因になる。
-            length: 0,      // 距離ゼロで拘束
+            // ★修正: stiffnessを 1.0 -> 0.2 に戻す
+            // 強いゴム程度の硬さにすることで、クリック瞬間の座標ズレ（ショック）を吸収する。
+            // 「ドラッグ中の遅れ」は上記の frictionAir 操作で解消済みなので、ここは柔らかくてOK。
+            stiffness: 0.2,
+            damping: 0.1,
+            length: 0,
             render: { visible: false }
         });
 
