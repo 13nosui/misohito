@@ -16,8 +16,8 @@ export type TankaSections = {
     kami1: string; // 五
     kami2: string; // 七
     kami3: string; // 五
-    shimo1: string; // 七
-    shimo2: string; // 七
+    shimo1?: string; // 七
+    shimo2?: string; // 七
 };
 
 // 投稿データのメイン型

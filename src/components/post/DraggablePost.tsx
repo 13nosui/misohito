@@ -19,7 +19,6 @@ export const DraggablePost = ({ sections, onDelete }: DraggablePostProps) => {
     const dragConstraintRef = useRef<Matter.Constraint | null>(null);
 
     const [isReady, setIsReady] = useState(false);
-    // 初期サイズは0にしておき、計算完了まで表示しない（チラつき防止）
     const [cardSize, setCardSize] = useState({ width: 0, height: 0 });
 
     useEffect(() => {
@@ -28,7 +27,6 @@ export const DraggablePost = ({ sections, onDelete }: DraggablePostProps) => {
         const cw = window.innerWidth;
         const ch = window.innerHeight;
 
-        // ■ 共通サイズ計算ロジック（PostAnimationと完全に一致させる）
         const targetWidth = Math.min(cw * 0.9, 960);
         const targetHeight = Math.max(targetWidth * 0.55, 400);
 
@@ -64,41 +62,30 @@ export const DraggablePost = ({ sections, onDelete }: DraggablePostProps) => {
 
             if (cardBody) {
                 const isDragging = dragConstraintRef.current !== null;
-
-                // ドラッグ中の挙動制御
                 cardBody.frictionAir = isDragging ? 0.02 : 0.06;
                 const angularDamping = isDragging ? 0.9 : 0.999;
                 Matter.Body.setAngularVelocity(cardBody, cardBody.angularVelocity * angularDamping);
 
-                // DOM反映
                 if (cardRef.current) {
                     const { x, y } = cardBody.position;
                     const angle = cardBody.angle;
-
                     cardRef.current.style.transform = `translate(${x - targetWidth / 2}px, ${y - targetHeight / 2}px) rotate(${angle}rad)`;
 
-                    // 影の演出
                     const speed = cardBody.speed;
                     const shadowBlur = Math.min(speed * 2 + 10, 60);
                     const shadowOpacity = Math.min(speed * 0.005 + 0.1, 0.3);
                     const shadowOffset = Math.min(speed + 5, 25);
-
                     const dx = x - cw / 2;
                     const dy = y - ch / 2;
                     const dist = Math.sqrt(dx * dx + dy * dy) || 1;
                     const sx = (dx / dist) * -shadowOffset;
                     const sy = (dy / dist) * -shadowOffset + shadowOffset;
-
                     cardRef.current.style.boxShadow = `${sx}px ${sy}px ${shadowBlur}px rgba(0,0,0,${shadowOpacity})`;
                 }
 
-                // 画面外判定
                 const margin = Math.max(targetWidth, targetHeight);
                 const { x, y } = cardBody.position;
-                if (
-                    x < -margin || x > cw + margin ||
-                    y < -margin || y > ch + margin
-                ) {
+                if (x < -margin || x > cw + margin || y < -margin || y > ch + margin) {
                     onDelete();
                 }
             }
@@ -161,7 +148,9 @@ export const DraggablePost = ({ sections, onDelete }: DraggablePostProps) => {
         window.addEventListener('pointerup', onPointerUp);
     }, []);
 
-    const sectionKeys: (keyof TankaSections)[] = ['kami1', 'kami2', 'kami3', 'shimo1', 'shimo2'];
+    // ★修正: 存在するキーのみを抽出して表示する
+    const allKeys: (keyof TankaSections)[] = ['kami1', 'kami2', 'kami3', 'shimo1', 'shimo2'];
+    const sectionKeys = allKeys.filter(key => sections[key] && sections[key]?.trim() !== '');
 
     return (
         <div ref={containerRef} className="fixed inset-0 overflow-hidden touch-none">
@@ -172,7 +161,7 @@ export const DraggablePost = ({ sections, onDelete }: DraggablePostProps) => {
                 style={{
                     width: `${cardSize.width}px`,
                     height: `${cardSize.height}px`,
-                    opacity: isReady ? 1 : 0, // サイズ計算と物理演算の準備ができるまで隠す
+                    opacity: isReady ? 1 : 0,
                 }}
             >
                 <div className="flex flex-col items-center justify-center h-full gap-y-8 pointer-events-none mix-blend-multiply">

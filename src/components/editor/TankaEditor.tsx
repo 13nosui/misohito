@@ -1,21 +1,21 @@
 'use client';
 
 import React, { useState } from 'react';
-import * as Label from '@radix-ui/react-label';
-import { useTankaEditor } from '@/hooks/useTankaEditor';
+import { useTankaEditor, EditorMode } from '@/hooks/useTankaEditor'; // EditorModeをインポート
 import { TankaSections } from '@/types/post';
 import { PostAnimation } from '@/components/post/PostAnimation';
-import { DraggablePost } from '@/components/post/DraggablePost'; // ← 追加
+import { DraggablePost } from '@/components/post/DraggablePost';
 
-// 状態の定義
 type EditorStatus = 'editing' | 'animating' | 'viewing';
 
 export const TankaEditor = () => {
-    const { sections, inputRefs, handleChange, LIMITS } = useTankaEditor();
-    const [status, setStatus] = useState<EditorStatus>('editing'); // 状態管理
+    // mode, setMode, activeKeys を受け取る
+    const { sections, inputRefs, handleChange, LIMITS, mode, setMode, activeKeys } = useTankaEditor();
+    const [status, setStatus] = useState<EditorStatus>('editing');
 
-    const isComplete = Object.keys(LIMITS).every(
-        (key) => sections[key as keyof TankaSections].length === LIMITS[key as keyof TankaSections]
+    // ★修正: activeKeys（現在のモードで必要なキー）だけで入力完了を判定する
+    const isComplete = activeKeys.every(
+        (key) => sections[key].length === LIMITS[key]
     );
 
     const handlePost = () => {
@@ -24,52 +24,60 @@ export const TankaEditor = () => {
         }
     };
 
-    // アニメーション完了後の処理
     const handleAnimationComplete = () => {
         setStatus('viewing');
     };
 
-    // 投げ捨てられた（削除された）時の処理
     const handleDiscard = () => {
-        // 本当はここでデータをクリアする処理などを入れる
-        // 今回はデモとして入力状態に戻すだけ（文字は残したままにするか、消すか）
-        // 文字を消す場合は useTankaEditor に reset 関数を追加する必要がありますが、
-        // いったん「投げ捨てた快感」のあとに、また編集画面に戻る動きにします。
         setStatus('editing');
     };
 
-    // ■ 状態：アニメーション中
+    // 編集画面でない時は、それぞれのコンポーネントを表示
     if (status === 'animating') {
         return <PostAnimation sections={sections} onComplete={handleAnimationComplete} />;
     }
 
-    // ■ 状態：鑑賞 & 物理演算モード
     if (status === 'viewing') {
         return <DraggablePost sections={sections} onDelete={handleDiscard} />;
     }
 
-    // ■ 状態：入力中 (デフォルト)
     return (
-        <div className="flex flex-col gap-12 p-6 w-full max-w-3xl mx-auto animate-in fade-in duration-500">
-            <div className="flex flex-wrap gap-4 items-end justify-center">
-                {(Object.keys(LIMITS) as Array<keyof TankaSections>).map((key) => (
-                    <div key={key} className="flex flex-col items-center gap-3">
-                        <Label.Root className="text-[10px] text-slate-400 font-medium uppercase tracking-widest">
-                            {LIMITS[key]}
-                        </Label.Root>
+        <div className="w-full max-w-2xl mx-auto p-8 relative min-h-[60vh] flex flex-col justify-center">
+
+            {/* ★追加: モード切り替えスイッチ */}
+            <div className="absolute top-0 right-0 p-4 flex gap-4 text-xs font-medium tracking-widest text-slate-400">
+                <button
+                    onClick={() => setMode('tanka')}
+                    className={`transition-colors duration-300 ${mode === 'tanka' ? 'text-slate-900 underline underline-offset-4' : 'hover:text-slate-600'}`}
+                >
+                    TANKA
+                </button>
+                <button
+                    onClick={() => setMode('haiku')}
+                    className={`transition-colors duration-300 ${mode === 'haiku' ? 'text-slate-900 underline underline-offset-4' : 'hover:text-slate-600'}`}
+                >
+                    HAIKU
+                </button>
+            </div>
+
+            <div className="flex flex-col gap-12 mb-16">
+                {/* ★修正: activeKeys を使って入力欄を動的に生成 */}
+                {activeKeys.map((key) => (
+                    <div key={key} className="flex flex-col items-center gap-2">
+                        <label className="text-[10px] text-slate-400 font-light tracking-[0.2em] uppercase">
+                            {key.toUpperCase()}
+                        </label>
                         <input
                             ref={inputRefs[key]}
-                            id={key}
                             type="text"
                             value={sections[key]}
                             onChange={(e) => handleChange(e, key)}
-                            placeholder="・"
                             className={`
-                text-center text-2xl font-medium border-b transition-all outline-none bg-transparent
-                ${sections[key].length === LIMITS[key]
+                                text-center text-3xl md:text-4xl font-medium border-b transition-all outline-none bg-transparent
+                                ${sections[key].length === LIMITS[key]
                                     ? 'border-slate-800 text-slate-900'
                                     : 'border-slate-200 text-slate-400 focus:border-slate-400'}
-              `}
+                            `}
                             style={{ width: `${LIMITS[key] * 1.5 + 1}rem` }}
                         />
                     </div>
@@ -80,7 +88,8 @@ export const TankaEditor = () => {
                 <div className="text-center">
                     <p className="text-xs text-slate-400 mb-4 font-light tracking-widest">PREVIEW</p>
                     <p className="text-lg tracking-wider text-slate-600 font-serif">
-                        {Object.values(sections).filter(Boolean).join('　')}
+                        {/* activeKeysに基づいてプレビューを表示 */}
+                        {activeKeys.map(key => sections[key]).filter(Boolean).join('　')}
                     </p>
                 </div>
 
@@ -88,11 +97,11 @@ export const TankaEditor = () => {
                     onClick={handlePost}
                     disabled={!isComplete}
                     className={`
-            px-8 py-3 rounded-full text-sm font-bold tracking-widest transition-all duration-500
-            ${isComplete
+                        px-8 py-3 rounded-full text-sm font-bold tracking-widest transition-all duration-500
+                        ${isComplete
                             ? 'bg-slate-900 text-white hover:bg-slate-700 translate-y-0 opacity-100 shadow-lg'
                             : 'bg-slate-200 text-slate-400 translate-y-4 opacity-0 cursor-not-allowed'}
-          `}
+                    `}
                 >
                     詠む
                 </button>

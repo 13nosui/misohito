@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react'; // useMemoを追加
 import { motion } from 'framer-motion';
 import { TankaSections } from '@/types/post';
 
@@ -10,16 +10,18 @@ interface PostAnimationProps {
 }
 
 export const PostAnimation = ({ sections, onComplete }: PostAnimationProps) => {
-    const sectionKeys: (keyof TankaSections)[] = ['kami1', 'kami2', 'kami3', 'shimo1', 'shimo2'];
+    // ★修正: useMemoを使ってsectionKeysをメモ化
+    // これにより、setCardSizeによる再レンダリング時に新しい配列が生成されるのを防ぎ、
+    // useEffectの無限ループを回避します。
+    const sectionKeys = useMemo(() => {
+        const allKeys: (keyof TankaSections)[] = ['kami1', 'kami2', 'kami3', 'shimo1', 'shimo2'];
+        return allKeys.filter(key => sections[key] && sections[key]?.trim() !== '');
+    }, [sections]);
 
-    // アニメーション用のグローバルインデックス（遅延計算用）
     let globalCharIndex = 0;
-
-    // DraggablePostと同じサイズ計算（レイアウトの一致用）
     const [cardSize, setCardSize] = useState({ width: 0, height: 0 });
 
     useEffect(() => {
-        // 1. サイズ計算
         const updateSize = () => {
             const cw = window.innerWidth;
             const targetWidth = Math.min(cw * 0.9, 960);
@@ -30,10 +32,11 @@ export const PostAnimation = ({ sections, onComplete }: PostAnimationProps) => {
         updateSize();
         window.addEventListener('resize', updateSize);
 
-        // 2. 自動遷移タイマー（文字数に基づいて計算）
-        // (全文字数 * 0.05s) + (5行 * 0.2s) + 読了の余韻(2s)
-        const totalChars = Object.values(sections).join('').length;
-        const totalDuration = (totalChars * 50) + (5 * 200) + 2000;
+        // 文字数ベースで完了時間を計算
+        // sectionKeysはメモ化されているため、依存配列に入れても無限ループしません
+        const validText = sectionKeys.map(k => sections[k]).join('');
+        const totalChars = validText.length;
+        const totalDuration = (totalChars * 50) + (sectionKeys.length * 200) + 2000;
 
         const timer = setTimeout(() => {
             onComplete();
@@ -43,7 +46,7 @@ export const PostAnimation = ({ sections, onComplete }: PostAnimationProps) => {
             window.removeEventListener('resize', updateSize);
             clearTimeout(timer);
         };
-    }, [onComplete, sections]);
+    }, [onComplete, sections, sectionKeys]);
 
     return (
         <motion.div
@@ -51,7 +54,6 @@ export const PostAnimation = ({ sections, onComplete }: PostAnimationProps) => {
             exit={{ opacity: 0 }}
             transition={{ duration: 1 }}
         >
-            {/* 透明なコンテナ（サイズと位置をカード画面と完全に一致させる） */}
             <div
                 className="relative p-16 select-none"
                 style={{
@@ -63,9 +65,9 @@ export const PostAnimation = ({ sections, onComplete }: PostAnimationProps) => {
                 <div className="flex flex-col items-center justify-center h-full gap-y-8 pointer-events-none mix-blend-multiply">
                     <div className="flex flex-wrap justify-center items-center content-center h-full w-full gap-x-6 gap-y-4">
                         {sectionKeys.map((key, sIndex) => {
-                            const chars = sections[key].split('');
+                            const text = sections[key] || '';
+                            const chars = text.split('');
 
-                            // 行単位のラッパー（DraggablePostのスタイルを継承しつつ、文字単位アニメのためにflexにする）
                             return (
                                 <span
                                     key={key}
@@ -73,14 +75,12 @@ export const PostAnimation = ({ sections, onComplete }: PostAnimationProps) => {
                                     style={{ fontFeatureSettings: '"palt"' }}
                                 >
                                     {chars.map((char, cIndex) => {
-                                        // animation.ts の遅延ロジック
                                         const delay = globalCharIndex * 0.05 + sIndex * 0.2;
                                         globalCharIndex++;
 
                                         return (
                                             <motion.span
                                                 key={`${key}-${cIndex}`}
-                                                // animation.ts のアニメーション設定
                                                 initial={{ opacity: 0, x: -20, filter: 'blur(10px)' }}
                                                 animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
                                                 transition={{
