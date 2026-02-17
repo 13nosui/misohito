@@ -12,9 +12,9 @@ const LIMITS: Record<keyof TankaSections, number> = {
     shimo2: 7,
 };
 
-export const useTankaEditor = () => {
+export const useTankaEditor = (initialMode: EditorMode = 'HAIKU') => {
     // モード切り替え用のstate
-    const [mode, setMode] = useState<EditorMode>('tanka');
+    const [mode, setMode] = useState<EditorMode>(initialMode);
 
     const [sections, setSections] = useState<TankaSections>({
         kami1: '', kami2: '', kami3: '', shimo1: '', shimo2: ''

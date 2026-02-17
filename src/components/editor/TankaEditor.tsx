@@ -27,8 +27,8 @@ export const TankaEditor = ({ onComplete }: TankaEditorProps) => {
 
     return (
         <div className="w-full max-w-2xl mx-auto p-8 relative min-h-[60vh] flex flex-col justify-center">
-            {/* ... 中身のUIコードは変更なし ... */}
-            <div className="absolute top-0 right-0 p-4 flex gap-4 text-xs font-medium tracking-widest text-slate-400">
+            {/* ... HAIKUモード固定のため、モード切替タブを非表示 ... */}
+            {/* <div className="absolute top-0 right-0 p-4 flex gap-4 text-xs font-medium tracking-widest text-slate-400">
                 <button
                     onClick={() => setMode('tanka')}
                     className={`transition-colors duration-300 ${mode === 'tanka' ? 'text-slate-900 underline underline-offset-4' : 'hover:text-slate-600'}`}
@@ -41,7 +41,7 @@ export const TankaEditor = ({ onComplete }: TankaEditorProps) => {
                 >
                     HAIKU
                 </button>
-            </div>
+            </div> */}
 
             <div className="flex flex-col gap-12 mb-16">
                 {activeKeys.map((key) => (
