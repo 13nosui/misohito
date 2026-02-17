@@ -1,7 +1,6 @@
-import { useState, useRef, ChangeEvent } from 'react';
+import { useState, useRef, ChangeEvent, CompositionEvent } from 'react';
 import { TankaSections } from '@/types/post';
 
-// モードの型定義
 export type EditorMode = 'tanka' | 'haiku';
 
 const LIMITS: Record<keyof TankaSections, number> = {
@@ -12,10 +11,10 @@ const LIMITS: Record<keyof TankaSections, number> = {
     shimo2: 7,
 };
 
-export const useTankaEditor = (initialMode: EditorMode = 'HAIKU') => {
-    // モード切り替え用のstate
+export const useTankaEditor = (initialMode: EditorMode = 'haiku') => {
+    // 変換中かどうかを同期的に追跡するためのRef
+    const isComposingRef = useRef(false);
     const [mode, setMode] = useState<EditorMode>(initialMode);
-
     const [sections, setSections] = useState<TankaSections>({
         kami1: '', kami2: '', kami3: '', shimo1: '', shimo2: ''
     });
@@ -34,50 +33,67 @@ export const useTankaEditor = (initialMode: EditorMode = 'HAIKU') => {
         shimo2: shimo2Ref,
     };
 
-    // モードに応じて、有効なセクションのキー配列を返す
     const activeKeys: (keyof TankaSections)[] = mode === 'tanka'
         ? ['kami1', 'kami2', 'kami3', 'shimo1', 'shimo2']
         : ['kami1', 'kami2', 'kami3'];
 
-    const handleChange = (e: ChangeEvent<HTMLInputElement>, key: keyof TankaSections) => {
-        const value = e.target.value;
-        const limit = LIMITS[key];
+    const handleCompositionStart = () => {
+        isComposingRef.current = true;
+    };
 
-        if (value.length <= limit) {
-            setSections(prev => ({ ...prev, [key]: value }));
-        }
+    const handleCompositionEnd = (e: any, key: keyof TankaSections) => {
+        isComposingRef.current = false;
 
-        // 自動フォーカス移動ロジック
-        if (value.length === limit) {
-            const nextFieldMap: Record<string, keyof TankaSections | null> = {
-                kami1: 'kami2',
-                kami2: 'kami3',
-                // 俳句モードなら kami3 で終了、短歌なら shimo1 へ
-                kami3: mode === 'tanka' ? 'shimo1' : null,
-                shimo1: 'shimo2',
-                shimo2: null,
-            };
+        // 変換確定時の最終的な値をセット
+        const finalValue = e.currentTarget.value;
+        const trimmedValue = finalValue.slice(0, LIMITS[key]);
 
-            const nextKey = nextFieldMap[key];
-            if (nextKey && inputRefs[nextKey]?.current) {
-                inputRefs[nextKey].current?.focus();
+        setSections(prev => ({ ...prev, [key]: trimmedValue }));
+
+        // 確定した結果、文字数が上限に達していたら次のフィールドへ
+        if (trimmedValue.length >= LIMITS[key]) {
+            const nextIndex = activeKeys.indexOf(key) + 1;
+            if (nextIndex < activeKeys.length) {
+                // 少しだけ遅延させてフォーカスを移動（IMEの確定処理との競合を避ける）
+                setTimeout(() => {
+                    inputRefs[activeKeys[nextIndex]].current?.focus();
+                }, 10);
             }
         }
     };
 
-    // 俳句モードに切り替えた時、不要な下の句データを消去したい場合はここで処理する
-    // 今回は「切り替えてもデータは残る（戻せば復活する）」仕様にしておく
-    const handleModeChange = (newMode: EditorMode) => {
-        setMode(newMode);
+    const handleChange = (e: ChangeEvent<HTMLInputElement>, key: keyof TankaSections) => {
+        const value = e.target.value;
+
+        // 変換中の場合は、文字数制限をかけずに状態を更新する
+        // （「とうこう」などの長いひらがなを入力できるようにするため）
+        if (isComposingRef.current) {
+            setSections(prev => ({ ...prev, [key]: value }));
+            return;
+        }
+
+        // 変換中でない通常入力の場合は制限をかける
+        const trimmedValue = value.slice(0, LIMITS[key]);
+        setSections(prev => ({ ...prev, [key]: trimmedValue }));
+
+        // 制限に達したら次のフォームへ移動
+        if (trimmedValue.length === LIMITS[key]) {
+            const nextIndex = activeKeys.indexOf(key) + 1;
+            if (nextIndex < activeKeys.length) {
+                inputRefs[activeKeys[nextIndex]].current?.focus();
+            }
+        }
     };
 
     return {
         sections,
         inputRefs,
         handleChange,
+        handleCompositionStart,
+        handleCompositionEnd,
         LIMITS,
         mode,
-        setMode: handleModeChange,
-        activeKeys, // UI側でループ処理に使うキー配列
+        setMode,
+        activeKeys
     };
 };
