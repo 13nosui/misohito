@@ -84,7 +84,7 @@ export default function Home() {
           >
             <button
               onClick={() => setView('timeline')}
-              className="absolute top-6 left-6 text-xs text-slate-400 hover:text-slate-800 tracking-widest z-50"
+              className="absolute top-20 left-6 text-xs text-slate-400 hover:text-slate-800 tracking-widest z-50"
             >
               ← BACK
             </button>

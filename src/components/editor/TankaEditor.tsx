@@ -11,7 +11,15 @@ interface TankaEditorProps {
 
 // ★修正: propsを受け取る
 export const TankaEditor = ({ onComplete }: TankaEditorProps) => {
-    const { sections, inputRefs, handleChange, LIMITS, mode, setMode, activeKeys } = useTankaEditor();
+    const {
+        sections,
+        inputRefs,
+        handleChange,
+        handleCompositionStart, // 追加
+        handleCompositionEnd,   // 追加
+        LIMITS,
+        activeKeys
+    } = useTankaEditor();
 
     // ★修正: 内部的なstatus管理（animating, viewing）は削除し、単なる入力フォームに徹する
 
@@ -54,26 +62,22 @@ export const TankaEditor = ({ onComplete }: TankaEditorProps) => {
                             type="text"
                             value={sections[key] ?? ''}
                             onChange={(e) => handleChange(e, key)}
+                            onCompositionStart={handleCompositionStart}
+                            onCompositionEnd={(e) => handleCompositionEnd(e, key)}
                             className={`
                                 text-center text-3xl md:text-4xl font-medium border-b transition-all outline-none bg-transparent
                                 ${(sections[key] ?? '').length === LIMITS[key]
                                     ? 'border-slate-800 text-slate-900'
                                     : 'border-slate-200 text-slate-400 focus:border-slate-400'}
                             `}
-                            style={{ width: `${LIMITS[key] * 1.5 + 1}rem` }}
+                            // 幅を em 単位に修正 (全角文字数 + わずかな余裕)
+                            style={{ width: `${LIMITS[key] + 0.5}em` }}
                         />
                     </div>
                 ))}
             </div>
 
             <div className="flex flex-col items-center gap-8">
-                <div className="text-center">
-                    <p className="text-xs text-slate-400 mb-4 font-light tracking-widest">PREVIEW</p>
-                    <p className="text-lg tracking-wider text-slate-600 font-serif">
-                        {activeKeys.map(key => sections[key] ?? '').filter(Boolean).join('　')}
-                    </p>
-                </div>
-
                 <button
                     onClick={handlePost}
                     disabled={!isComplete}
