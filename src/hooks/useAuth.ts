@@ -14,12 +14,19 @@ export const useAuth = () => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // リダイレクトログインから戻ってきた場合のエラー処理などを確認
-        getRedirectResult(auth).catch((error) => {
-            console.error("Redirect result failed", error);
-        });
+        // リダイレクト結果の確認
+        getRedirectResult(auth)
+            .then((result) => {
+                if (result) {
+                    console.log("Redirect success:", result);
+                }
+            })
+            .catch((error) => {
+                console.error("Redirect error:", error);
+                // 【追加】スマホでエラー内容を確認するためのアラート
+                alert(`ログインエラー: ${error.message}`);
+            });
 
-        // 認証状態の変更を監視
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
             setUser(currentUser);
             setLoading(false);
