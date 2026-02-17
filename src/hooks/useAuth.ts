@@ -14,21 +14,31 @@ export const useAuth = () => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // リダイレクト結果の確認
+        // リダイレクト結果の取得を試みる
         getRedirectResult(auth)
             .then((result) => {
                 if (result) {
+                    alert(`リダイレクト成功: ユーザー ${result.user.displayName}`);
                     console.log("Redirect success:", result);
+                } else {
+                    // ここが重要：リダイレクト結果が見つからない場合
+                    alert("リダイレクト結果なし（null）");
                 }
             })
             .catch((error) => {
                 console.error("Redirect error:", error);
-                // 【追加】スマホでエラー内容を確認するためのアラート
-                alert(`ログインエラー: ${error.message}`);
+                alert(`リダイレクトエラー: ${error.message}`);
             });
 
+        // 認証状態の監視
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-            setUser(currentUser);
+            if (currentUser) {
+                alert(`Auth検知: ログイン済み ${currentUser.displayName}`);
+                setUser(currentUser);
+            } else {
+                // 初回は必ずここを通るが、リダイレクト成功後ならユーザーが入るはず
+                console.log("Auth検知: ユーザーなし");
+            }
             setLoading(false);
         });
 
